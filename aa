@@ -1,0 +1,265 @@
+-- Create the GUI elements
+local CoreGui = game:GetService("CoreGui")
+local ScreenGui = Instance.new("ScreenGui")
+local ToggleButton1 = Instance.new("TextButton")
+local ToggleButton2 = Instance.new("TextButton")
+local ToggleButton3 = Instance.new("TextButton")
+local DestroyButton = Instance.new("TextButton")
+
+-- Ensure the GUI persists across deaths
+ScreenGui.ResetOnSpawn = false
+
+-- Parent the GUI to CoreGui
+ScreenGui.Parent = CoreGui
+
+-- Parent buttons to the ScreenGui
+ToggleButton1.Parent = ScreenGui
+ToggleButton2.Parent = ScreenGui
+ToggleButton3.Parent = ScreenGui
+DestroyButton.Parent = ScreenGui
+
+-- Set up the first button's appearance and position
+ToggleButton1.Size = UDim2.new(0, 200, 0, 50)
+ToggleButton1.Position = UDim2.new(0.5, -100, 0.4, 0)
+ToggleButton1.Text = "5k Grind"
+
+-- Set up the second button's appearance and position
+ToggleButton2.Size = UDim2.new(0, 200, 0, 50)
+ToggleButton2.Position = UDim2.new(0.5, -100, 0.5, 0)
+ToggleButton2.Text = "5k+ Grind"
+
+-- Set up the third button's appearance and position
+ToggleButton3.Size = UDim2.new(0, 200, 0, 50)
+ToggleButton3.Position = UDim2.new(0.5, -100, 0.6, 0)
+ToggleButton3.Text = "Kill Grind"
+
+-- Set up the destroy button's appearance and position
+DestroyButton.Size = UDim2.new(0, 200, 0, 50)
+DestroyButton.Position = UDim2.new(0.5, -100, 0.7, 0)
+DestroyButton.Text = "Destroy GUI"
+
+-- Variables to control the toggles
+local isRunning1 = false
+local connection1
+local isRunning2 = false
+local connection2
+local killGrindActive = false
+
+-- Function to teleport the player to a specific location
+local function teleportPlayerTo(location)
+    local player = game.Players.LocalPlayer
+    if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.CFrame = location
+        wait(0.1) -- Add slight delay after teleportation
+    else
+        warn("HumanoidRootPart not found for the player!")
+    end
+end
+
+-- Function to apply the remote to the local player
+local function applyRemoteToPlayer()
+    local player = game.Players.LocalPlayer
+    if player and player.Character and player.Character:FindFirstChild("Humanoid") then
+        local humanoid = player.Character.Humanoid
+
+        -- Prevent applying damage while dead
+        if humanoid.Health == 0 then return end
+
+        -- Remove forcefield if present
+        local forceField = player.Character:FindFirstChildOfClass("ForceField")
+        if forceField then
+            forceField:Destroy()
+            wait(0.1) -- Add slight delay after removing forcefield
+        end
+
+        -- Retry logic for applying damage
+        local maxRetries = 30
+        local retries = 0
+        local initialHealth = humanoid.Health
+
+        local remote = game:GetService("ReplicatedStorage"):FindFirstChild("jdskhfsIIIllliiIIIdchgdIiIIIlIlIli")
+        if not remote then
+            warn("Remote not found!")
+            return
+        end
+
+        while retries < maxRetries and humanoid.Health == initialHealth do
+            remote:FireServer(humanoid, 16) -- Trigger the remote
+            wait(0.1 + retries * 0.05) -- Add slight exponential backoff
+
+            -- Apply high damage
+            if humanoid.TakeDamage then
+                humanoid:TakeDamage(99999999) -- Apply the damage
+                wait(0.1)
+            else
+                warn("TakeDamage method not found on Humanoid!")
+            end
+
+            -- Check if damage was applied
+            if humanoid.Health < initialHealth then
+                break
+            else
+                retries = retries + 1
+            end
+
+            -- Pause grind if retries exceed half the maxRetries
+            if retries >= maxRetries / 2 then
+                -- Pause grind temporarily to prioritize damage application
+            end
+        end
+
+        if retries == maxRetries then
+            warn("Failed to apply damage after " .. maxRetries .. " retries.")
+        end
+    else
+        warn("Player or Humanoid not found!")
+    end
+end
+
+-- Function to execute the first remote event
+local function executeFirstRemote()
+    local remote = game:GetService("ReplicatedStorage"):WaitForChild("jdskhfsIIIllliiIIIdchgdIiIIIlIlIli")
+    if remote then
+        remote:FireServer(workspace.MAP.dummies.Dummy.Humanoid, 16)
+    else
+        warn("First remote not found!")
+    end
+end
+
+-- Function to execute the second remote event
+local function executeSecondRemote()
+    local remote = game:GetService("ReplicatedStorage"):WaitForChild("SkillsInRS"):WaitForChild("RemoteEvent")
+    if remote then
+        remote:FireServer(Vector3.new(-125.53437805175781, 644.6688232421875, 594.9981689453125), "NewLightningball")
+    else
+        warn("Second remote not found!")
+    end
+end
+
+-- Function to execute the third remote event
+local function executeThirdRemote()
+    local remote = game:GetService("ReplicatedStorage"):WaitForChild("jdskhfsIIIllliiIIIdchgdIiIIIlIlIli")
+    if remote then
+        remote:FireServer(workspace.MAP["5k_dummies"].Dummy2.Humanoid, 17)
+    else
+        warn("Third remote not found!")
+    end
+end
+
+-- Function to execute NewFireball for 5k+ grind
+local function executeNewFireball()
+    local remote = game:GetService("ReplicatedStorage"):WaitForChild("SkillsInRS"):WaitForChild("RemoteEvent")
+    if remote then
+        remote:FireServer(Vector3.new(-82.81012725830078, 595.9014282226562, 815.2088012695312), "NewLightningball")
+    else
+        warn("NewFireball remote not found!")
+    end
+end
+
+local function executeFunction1()
+    if isRunning1 then -- Teleport only once when the function starts
+        teleportPlayerTo(CFrame.new(-125.534, 644.668, 594.998)) -- Teleport to 5k dummy
+    end
+
+    while isRunning1 do
+        executeFirstRemote()
+        executeSecondRemote()
+        wait(0.001)
+    end
+end
+
+-- Combined function for the second button
+local function executeFunction2()
+    if isRunning2 then -- Teleport only once when the function starts
+        teleportPlayerTo(CFrame.new(-85.69, 593.24, 813.09)) -- Teleport to 5k+ dummy
+    end
+
+    while isRunning2 do
+        -- Only apply player damage if Kill Grind is also active
+        if killGrindActive then
+            applyRemoteToPlayer()
+            wait(0.1) -- Ensure proper sequencing
+        end
+
+        -- Retry until dummy damage confirms success
+        local dummySuccess = false
+        for i = 1, 5 do -- Attempt up to 5 times for reliability
+            executeThirdRemote()
+            dummySuccess = workspace.MAP["5k_dummies"].Dummy2.Humanoid.Health < workspace.MAP["5k_dummies"].Dummy2.Humanoid.MaxHealth
+            if dummySuccess then break end
+            wait(0.2)
+        end
+
+        if not dummySuccess then
+            warn("Failed to damage dummy after retries.")
+        end
+
+        executeNewFireball()
+        wait(0.001) -- Add 1ms delay
+    end
+end
+
+-- Kill Grind function with loop and auto-respawn detection
+local function killGrindLoop()
+    local player = game.Players.LocalPlayer
+
+    local function loop()
+        while killGrindActive do
+            if player.Character and player.Character:FindFirstChild("Humanoid") then
+                if player.Character.Humanoid.Health > 0 then
+                    teleportPlayerTo(CFrame.new(-85.69, 593.24, 813.09))
+                    applyRemoteToPlayer()
+                end
+            end
+            wait(0.5)
+        end
+    end
+
+    -- Reconnect after death
+    player.CharacterAdded:Connect(function()
+        if killGrindActive then
+            wait(1) -- Wait for respawn
+            loop() -- Restart loop
+        end
+    end)
+
+    loop()
+end
+
+-- Button 1 click event
+ToggleButton1.MouseButton1Click:Connect(function()
+    isRunning1 = not isRunning1
+    if isRunning1 then
+        ToggleButton1.Text = "Stop 5k Grind"
+        coroutine.wrap(executeFunction1)()
+    else
+        ToggleButton1.Text = "5k Grind"
+    end
+end)
+
+-- Button 2 click event
+ToggleButton2.MouseButton1Click:Connect(function()
+    isRunning2 = not isRunning2
+    if isRunning2 then
+        ToggleButton2.Text = "Stop 5k+ Grind"
+        coroutine.wrap(executeFunction2)()
+    else
+        ToggleButton2.Text = "5k+ Grind"
+    end
+end)
+
+-- Button 3 click event for Kill Grind
+ToggleButton3.MouseButton1Click:Connect(function()
+    killGrindActive = not killGrindActive
+    if killGrindActive then
+        ToggleButton3.Text = "Stop Kill Grind"
+        killGrindLoop()
+    else
+        ToggleButton3.Text = "Kill Grind"
+    end
+end)
+
+-- Button to destroy the GUI
+DestroyButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
