@@ -203,10 +203,21 @@ end
 local function killGrindLoop()
     local player = game.Players.LocalPlayer
 
+    local function spawnMonkey()
+        local args = {
+            [1] = "monkey",
+            [2] = "monkey19",
+            [3] = "skatemonkeyAnim"
+        }
+        game:GetService("ReplicatedStorage").Events.SpawnEvent:FireServer(unpack(args))
+        wait(0.1) -- Slight delay after spawning
+    end
+
     local function loop()
         while killGrindActive do
             if player.Character and player.Character:FindFirstChild("Humanoid") then
                 if player.Character.Humanoid.Health > 0 then
+                    spawnMonkey() -- Spawn the monkey
                     teleportPlayerTo(CFrame.new(-85.69, 593.24, 813.09))
                     applyRemoteToPlayer()
                 end
