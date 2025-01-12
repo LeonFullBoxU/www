@@ -1,0 +1,153 @@
+-- Create the GUI elements
+local CoreGui = game:GetService("CoreGui")
+local ScreenGui = Instance.new("ScreenGui")
+local ToggleButton1 = Instance.new("TextButton")
+local ToggleButton2 = Instance.new("TextButton")
+local ToggleButton3 = Instance.new("TextButton")
+local DestroyButton = Instance.new("TextButton")
+
+-- Ensure the GUI persists across deaths
+ScreenGui.ResetOnSpawn = false
+
+-- Parent the GUI to CoreGui
+ScreenGui.Parent = CoreGui
+
+-- Parent buttons to the ScreenGui
+ToggleButton1.Parent = ScreenGui
+ToggleButton2.Parent = ScreenGui
+ToggleButton3.Parent = ScreenGui
+DestroyButton.Parent = ScreenGui
+
+-- Set up the first button's appearance and position
+ToggleButton1.Size = UDim2.new(0, 200, 0, 50)
+ToggleButton1.Position = UDim2.new(0.5, -100, 0.4, 0)
+ToggleButton1.Text = "5k Grind"
+
+-- Set up the second button's appearance and position
+ToggleButton2.Size = UDim2.new(0, 200, 0, 50)
+ToggleButton2.Position = UDim2.new(0.5, -100, 0.5, 0)
+ToggleButton2.Text = "5k+ Grind"
+
+-- Set up the third button's appearance and position
+ToggleButton3.Size = UDim2.new(0, 200, 0, 50)
+ToggleButton3.Position = UDim2.new(0.5, -100, 0.6, 0)
+ToggleButton3.Text = "Kill Grind"
+
+-- Set up the destroy button's appearance and position
+DestroyButton.Size = UDim2.new(0, 200, 0, 50)
+DestroyButton.Position = UDim2.new(0.5, -100, 0.7, 0)
+DestroyButton.Text = "Destroy GUI"
+
+-- Variables to control the toggles
+local isRunning1 = false
+local connection1
+local isRunning2 = false
+local connection2
+local killGrindActive = false
+
+-- Function to teleport the player to a specific location
+local function teleportPlayerTo(location)
+    local player = game.Players.LocalPlayer
+    if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.CFrame = location
+        wait(0.1) -- Add slight delay after teleportation
+    else
+        warn("HumanoidRootPart not found for the player!")
+    end
+end
+
+-- Function to spawn the entity
+local function spawnEntity()
+    local args = {
+        [1] = "monkey",
+        [2] = "monkey19",
+        [3] = "skatemonkeyAnim"
+    }
+    game:GetService("ReplicatedStorage").Events.SpawnEvent:FireServer(unpack(args))
+    wait(0.1) -- Allow time for the entity to spawn
+end
+
+-- Function to apply the remote to the local player
+local function applyRemoteToPlayer()
+    local player = game.Players.LocalPlayer
+    if player and player.Character and player.Character:FindFirstChild("Humanoid") then
+        local humanoid = player.Character.Humanoid
+
+        -- Prevent applying damage while dead
+        if humanoid.Health == 0 then return end
+
+        -- Remove forcefield if present
+        local forceField = player.Character:FindFirstChildOfClass("ForceField")
+        if forceField then
+            forceField:Destroy()
+            wait(0.1) -- Add slight delay after removing forcefield
+        end
+
+        -- Apply high damage
+        local remote = game:GetService("ReplicatedStorage"):FindFirstChild("jdskhfsIIIllliiIIIdchgdIiIIIlIlIli")
+        if remote then
+            remote:FireServer(humanoid, 16) -- Trigger the remote
+        else
+            warn("Remote not found!")
+        end
+    else
+        warn("Player or Humanoid not found!")
+    end
+end
+
+-- Main grind function
+local function grindSequence()
+    spawnEntity()
+    teleportPlayerTo(CFrame.new(-85.69, 593.24, 813.09))
+    applyRemoteToPlayer()
+    wait(0.1) -- Delay to sequence actions properly
+end
+
+-- Kill Grind function with loop
+local function killGrindLoop()
+    local player = game.Players.LocalPlayer
+
+    local function loop()
+        while killGrindActive do
+            grindSequence()
+            wait(0.5) -- Control loop frequency
+        end
+    end
+
+    -- Reconnect after death
+    player.CharacterAdded:Connect(function()
+        if killGrindActive then
+            wait(1) -- Wait for respawn
+            loop() -- Restart loop
+        end
+    end)
+
+    loop()
+end
+
+-- Button 1 click event
+ToggleButton1.MouseButton1Click:Connect(function()
+    isRunning1 = not isRunning1
+    if isRunning1 then
+        ToggleButton1.Text = "Stop 5k Grind"
+        coroutine.wrap(grindSequence)()
+    else
+        ToggleButton1.Text = "5k Grind"
+    end
+end)
+
+-- Button 3 click event for Kill Grind
+ToggleButton3.MouseButton1Click:Connect(function()
+    killGrindActive = not killGrindActive
+    if killGrindActive then
+        ToggleButton3.Text = "Stop Kill Grind"
+        killGrindLoop()
+    else
+        ToggleButton3.Text = "Kill Grind"
+    end
+end)
+
+-- Button to destroy the GUI
+DestroyButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
