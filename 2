@@ -1,153 +1,185 @@
--- Create the GUI elements
-local CoreGui = game:GetService("CoreGui")
-local ScreenGui = Instance.new("ScreenGui")
-local ToggleButton1 = Instance.new("TextButton")
-local ToggleButton2 = Instance.new("TextButton")
-local ToggleButton3 = Instance.new("TextButton")
-local DestroyButton = Instance.new("TextButton")
+--// Setup
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 
--- Ensure the GUI persists across deaths
-ScreenGui.ResetOnSpawn = false
+local KEY = "Leon123"
+local teleportCoords = Vector3.new(-80.7, 593.2, 811.7)
+local watching = false
+local lastPosition = teleportCoords
+local DamageEvent = ReplicatedStorage:WaitForChild("SkillsInRS"):WaitForChild("DamageIndicatorEvent")
 
--- Parent the GUI to CoreGui
-ScreenGui.Parent = CoreGui
-
--- Parent buttons to the ScreenGui
-ToggleButton1.Parent = ScreenGui
-ToggleButton2.Parent = ScreenGui
-ToggleButton3.Parent = ScreenGui
-DestroyButton.Parent = ScreenGui
-
--- Set up the first button's appearance and position
-ToggleButton1.Size = UDim2.new(0, 200, 0, 50)
-ToggleButton1.Position = UDim2.new(0.5, -100, 0.4, 0)
-ToggleButton1.Text = "5k Grind"
-
--- Set up the second button's appearance and position
-ToggleButton2.Size = UDim2.new(0, 200, 0, 50)
-ToggleButton2.Position = UDim2.new(0.5, -100, 0.5, 0)
-ToggleButton2.Text = "5k+ Grind"
-
--- Set up the third button's appearance and position
-ToggleButton3.Size = UDim2.new(0, 200, 0, 50)
-ToggleButton3.Position = UDim2.new(0.5, -100, 0.6, 0)
-ToggleButton3.Text = "Kill Grind"
-
--- Set up the destroy button's appearance and position
-DestroyButton.Size = UDim2.new(0, 200, 0, 50)
-DestroyButton.Position = UDim2.new(0.5, -100, 0.7, 0)
-DestroyButton.Text = "Destroy GUI"
-
--- Variables to control the toggles
-local isRunning1 = false
-local connection1
-local isRunning2 = false
-local connection2
-local killGrindActive = false
-
--- Function to teleport the player to a specific location
-local function teleportPlayerTo(location)
-    local player = game.Players.LocalPlayer
-    if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        player.Character.HumanoidRootPart.CFrame = location
-        wait(0.1) -- Add slight delay after teleportation
-    else
-        warn("HumanoidRootPart not found for the player!")
-    end
+--// Destroy old GUI
+if LocalPlayer.PlayerGui:FindFirstChild("CoordGui") then
+	LocalPlayer.PlayerGui.CoordGui:Destroy()
 end
 
--- Function to spawn the entity
-local function spawnEntity()
-    local args = {
-        [1] = "monkey",
-        [2] = "monkey19",
-        [3] = "skatemonkeyAnim"
-    }
-    game:GetService("ReplicatedStorage").Events.SpawnEvent:FireServer(unpack(args))
-    wait(0.1) -- Allow time for the entity to spawn
+--// Key Input GUI
+local keyInput = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
+keyInput.Name = "CoordGui"
+keyInput.ResetOnSpawn = false
+
+local frame = Instance.new("Frame", keyInput)
+frame.Size = UDim2.new(0, 250, 0, 120)
+frame.Position = UDim2.new(0.5, -125, 0.5, -60)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1, 0, 0, 25)
+title.BackgroundTransparency = 1
+title.Text = "Enter Access Key"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.Gotham
+title.TextScaled = true
+
+local textbox = Instance.new("TextBox", frame)
+textbox.Position = UDim2.new(0, 10, 0, 35)
+textbox.Size = UDim2.new(1, -20, 0, 30)
+textbox.PlaceholderText = "Enter Key..."
+textbox.Text = ""
+textbox.Font = Enum.Font.Gotham
+textbox.TextScaled = true
+textbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+textbox.TextColor3 = Color3.new(1, 1, 1)
+
+local submit = Instance.new("TextButton", frame)
+submit.Position = UDim2.new(0.5, -60, 0, 75)
+submit.Size = UDim2.new(0, 120, 0, 30)
+submit.Text = "Unlock GUI"
+submit.Font = Enum.Font.GothamBold
+submit.TextScaled = true
+submit.BackgroundColor3 = Color3.fromRGB(0, 170, 127)
+submit.TextColor3 = Color3.new(1, 1, 1)
+
+--// Main GUI setup (after valid key)
+local function createMainGUI()
+	keyInput:Destroy()
+	local screenGui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
+	screenGui.Name = "CoordGui"
+	screenGui.ResetOnSpawn = false
+
+	local frame = Instance.new("Frame", screenGui)
+	frame.Size = UDim2.new(0, 240, 0, 130)
+	frame.Position = UDim2.new(0, 20, 0, 20)
+	frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+	frame.BorderSizePixel = 0
+	frame.Active = true
+	frame.Draggable = true
+
+	local coordLabel = Instance.new("TextLabel", frame)
+	coordLabel.Size = UDim2.new(1, -20, 0, 25)
+	coordLabel.Position = UDim2.new(0, 10, 0, 10)
+	coordLabel.BackgroundTransparency = 1
+	coordLabel.TextColor3 = Color3.new(1, 1, 1)
+	coordLabel.Font = Enum.Font.Gotham
+	coordLabel.TextScaled = true
+	coordLabel.Text = "Coords: X, Y, Z"
+
+	local toggleButton = Instance.new("TextButton", frame)
+	toggleButton.Position = UDim2.new(0, 10, 0, 45)
+	toggleButton.Size = UDim2.new(1, -20, 0, 30)
+	toggleButton.BackgroundColor3 = Color3.fromRGB(0, 170, 127)
+	toggleButton.TextColor3 = Color3.new(1, 1, 1)
+	toggleButton.Font = Enum.Font.GothamBold
+	toggleButton.TextScaled = true
+	toggleButton.Text = "Start Auto Mode"
+
+	local destroyButton = Instance.new("TextButton", frame)
+	destroyButton.Position = UDim2.new(0, 10, 0, 85)
+	destroyButton.Size = UDim2.new(1, -20, 0, 30)
+	destroyButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+	destroyButton.TextColor3 = Color3.new(1, 1, 1)
+	destroyButton.Font = Enum.Font.GothamBold
+	destroyButton.TextScaled = true
+	destroyButton.Text = "Destroy GUI"
+
+	--// Update Coordinates
+	RunService.RenderStepped:Connect(function()
+		local char = LocalPlayer.Character
+		if char and char:FindFirstChild("HumanoidRootPart") then
+			local pos = char.HumanoidRootPart.Position
+			coordLabel.Text = string.format("Coords: %.1f, %.1f, %.1f", pos.X, pos.Y, pos.Z)
+		end
+	end)
+
+	--// Auto Monitor
+	local function autoMonitor()
+		while watching do
+			task.wait(1)
+			local char = LocalPlayer.Character
+			if char and char:FindFirstChild("HumanoidRootPart") then
+				local pos = char.HumanoidRootPart.Position
+				local dist = (Vector3.new(pos.X, 0, pos.Z) - Vector3.new(lastPosition.X, 0, lastPosition.Z)).Magnitude
+				if dist > 50 then
+					--// Teleport
+					char.HumanoidRootPart.CFrame = CFrame.new(teleportCoords)
+					lastPosition = teleportCoords
+
+					--// Fire DamageIndicatorEvent
+					local args = {
+						[1] = char:FindFirstChildOfClass("Humanoid"),
+						[2] = 10 -- Damage value (arbitrary, as specified it doesn't matter)
+					}
+					DamageEvent:FireServer(unpack(args))
+
+					--// Wait for DamageIndicatorEvent from server
+					local conn
+					conn = DamageEvent.OnClientEvent:Connect(function(humanoid)
+						if humanoid == char:FindFirstChildOfClass("Humanoid") then
+							conn:Disconnect()
+							--// Kill character
+							if char and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
+								char.Humanoid.Health = 0
+								--// Fire SpawnEvent on death
+								local diedConn
+								diedConn = char.Humanoid.Died:Connect(function()
+									diedConn:Disconnect()
+									task.wait(0.2)
+									local spawnArgs = {
+										[1] = "monkey",
+										[2] = "monkey19",
+										[3] = "skatemonkeyAnim"
+									}
+									ReplicatedStorage:WaitForChild("Events"):WaitForChild("SpawnEvent"):FireServer(unpack(spawnArgs))
+								end)
+							end
+						end
+					end)
+				end
+			end
+		end
+	end
+
+	--// Toggle Button
+	toggleButton.MouseButton1Click:Connect(function()
+		watching = not watching
+		toggleButton.Text = watching and "Stop Auto Mode" or "Start Auto Mode"
+		if watching then
+			task.spawn(autoMonitor)
+		end
+	end)
+
+	--// Destroy Button
+	destroyButton.MouseButton1Click:Connect(function()
+		watching = false
+		screenGui:Destroy()
+	end)
 end
 
--- Function to apply the remote to the local player
-local function applyRemoteToPlayer()
-    local player = game.Players.LocalPlayer
-    if player and player.Character and player.Character:FindFirstChild("Humanoid") then
-        local humanoid = player.Character.Humanoid
-
-        -- Prevent applying damage while dead
-        if humanoid.Health == 0 then return end
-
-        -- Remove forcefield if present
-        local forceField = player.Character:FindFirstChildOfClass("ForceField")
-        if forceField then
-            forceField:Destroy()
-            wait(0.1) -- Add slight delay after removing forcefield
-        end
-
-        -- Apply high damage
-        local remote = game:GetService("ReplicatedStorage"):FindFirstChild("jdskhfsIIIllliiIIIdchgdIiIIIlIlIli")
-        if remote then
-            remote:FireServer(humanoid, 16) -- Trigger the remote
-        else
-            warn("Remote not found!")
-        end
-    else
-        warn("Player or Humanoid not found!")
-    end
-end
-
--- Main grind function
-local function grindSequence()
-    spawnEntity()
-    teleportPlayerTo(CFrame.new(-85.69, 593.24, 813.09))
-    applyRemoteToPlayer()
-    wait(0.1) -- Delay to sequence actions properly
-end
-
--- Kill Grind function with loop
-local function killGrindLoop()
-    local player = game.Players.LocalPlayer
-
-    local function loop()
-        while killGrindActive do
-            grindSequence()
-            wait(0.5) -- Control loop frequency
-        end
-    end
-
-    -- Reconnect after death
-    player.CharacterAdded:Connect(function()
-        if killGrindActive then
-            wait(1) -- Wait for respawn
-            loop() -- Restart loop
-        end
-    end)
-
-    loop()
-end
-
--- Button 1 click event
-ToggleButton1.MouseButton1Click:Connect(function()
-    isRunning1 = not isRunning1
-    if isRunning1 then
-        ToggleButton1.Text = "Stop 5k Grind"
-        coroutine.wrap(grindSequence)()
-    else
-        ToggleButton1.Text = "5k Grind"
-    end
-end)
-
--- Button 3 click event for Kill Grind
-ToggleButton3.MouseButton1Click:Connect(function()
-    killGrindActive = not killGrindActive
-    if killGrindActive then
-        ToggleButton3.Text = "Stop Kill Grind"
-        killGrindLoop()
-    else
-        ToggleButton3.Text = "Kill Grind"
-    end
-end)
-
--- Button to destroy the GUI
-DestroyButton.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
+--// Handle Key Submission
+submit.MouseButton1Click:Connect(function()
+	if textbox.Text == KEY then
+		createMainGUI()
+	else
+		submit.Text = "Invalid Key"
+		submit.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+		task.wait(1.5)
+		submit.Text = "Unlock GUI"
+		submit.BackgroundColor3 = Color3.fromRGB(0, 170, 127)
+	end
 end)
